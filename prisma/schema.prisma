@@ -1,0 +1,236 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+}
+
+model Usuario {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  nombre    String
+  apellido  String
+  activo    Boolean  @default(true)
+  rolId    String
+  role      Rol      @relation(fields: [rolId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relaciones del sistema
+  eventos         Evento[]
+  listasTareas    ListaTarea[]
+  tareas          Tarea[]
+  categoriasGasto CategoriaGasto[]
+  gastos          Gasto[]
+  recordatorios   Recordatorio[]
+  pushTokens      PushToken[]
+}
+
+model Rol {
+  id          String          @id @default(uuid())
+  nombre      String          @unique
+  descripcion String?
+  usuarios    Usuario[]
+  permisos    RolPermiso[]
+}
+
+model Permiso {
+  id          String        @id @default(uuid())
+  codigo      String        @unique
+  descripcion String?
+  roles       RolPermiso[]
+}
+
+model RolPermiso {
+  id        String  @id @default(uuid())
+  rolId    String
+  permisoId String
+
+  rol       Rol     @relation(fields: [rolId], references: [id])
+  permiso   Permiso @relation(fields: [permisoId], references: [id])
+
+  @@unique([rolId, permisoId]) 
+}
+
+// --- ENUM ---
+enum EstadoTarea {
+  PENDIENTE
+  COMPLETADA
+  CANCELADA
+}
+
+enum Prioridad {
+  BAJA
+  MEDIA
+  ALTA
+}
+
+enum TipoPeriodo {
+  SEMANAL
+  MENSUAL
+  CUSTOM
+}
+
+enum EstadoRecordatorio {
+  PENDIENTE
+  ENVIADO
+  CANCELADO
+  ACTUALIZADO
+}
+
+enum TipoDispositivo {
+  ANDROID
+  IOS
+  WEB
+}
+
+// --- MÓDULO DE AGENDA (EVENTOS) ---
+
+model Evento {
+  id          String    @id @default(uuid())
+  usuarioId   String
+  titulo      String
+  descripcion String?
+  ubicacion   String?
+  direccion   String?
+  link        String?
+  hora        String?
+  activo      Boolean   @default(true)
+  estado      EstadoTarea @default(PENDIENTE)
+  prioridad   Prioridad   @default(MEDIA)
+  inicio      DateTime
+  todoElDia   Boolean   @default(false)
+  gastoTotal  Decimal?  @db.Decimal(10, 2)
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime? // Soft Delete
+
+  usuario       Usuario        @relation(fields: [usuarioId], references: [id])
+  recordatorios Recordatorio[]
+  gastos        Gasto[]
+}
+
+// --- MÓDULO DE TAREAS ---
+
+model ListaTarea {
+  id          String      @id @default(uuid())
+  usuarioId   String
+  titulo      String
+  descripcion String?
+  tipoPeriodo TipoPeriodo @default(CUSTOM)
+  mes         Int
+  anio        Int
+  inicio      DateTime?
+  fin         DateTime?
+  categoriaGastoId String
+  gastoTotal  Decimal?    @db.Decimal(10, 2)
+  estado      Boolean     @default(false) // Activa / Inactiva (o completada)
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  deletedAt   DateTime?
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+  categoriaGasto CategoriaGasto @relation(fields: [categoriaGastoId], references: [id])
+  tareas  Tarea[]
+  gastos  Gasto[]
+  recordatorios Recordatorio[]
+}
+
+model Tarea {
+  id               String      @id @default(uuid())
+  usuarioId        String
+  listaTareaId     String?
+  titulo           String
+  descripcion      String?
+  fechaVencimiento DateTime?
+  estado           EstadoTarea @default(PENDIENTE)
+  prioridad        Prioridad   @default(MEDIA)
+  gasto            Decimal?    @db.Decimal(10, 2) // Costo estimado o individual
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime? // Soft Delete
+
+  usuario        Usuario        @relation(fields: [usuarioId], references: [id])
+  listaTarea    ListaTarea?    @relation(fields: [listaTareaId], references: [id], onDelete: Restrict)
+  recordatorios Recordatorio[]
+  gastos         Gasto[]
+}
+
+// --- MÓDULO DE FINANZAS ---
+
+model CategoriaGasto {
+  id          String   @id @default(uuid())
+  usuarioId   String
+  nombre      String
+  descripcion String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+  listasTareas ListaTarea[]
+  gastos  Gasto[]
+}
+
+model Gasto {
+  id               String   @id @default(uuid())
+  usuarioId        String
+  categoriaGastoId String
+  listaTareaId     String? // Opcional
+  eventoId         String? // Opcional
+  tareaId          String? // Opcional - tarea independiente (sin lista)
+  total            Decimal  @db.Decimal(10, 2)
+  descripcion      String?
+  mes              Int
+  anio             Int
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  deletedAt        DateTime? // Soft Delete
+
+  usuario        Usuario        @relation(fields: [usuarioId], references: [id])
+  categoriaGasto CategoriaGasto @relation(fields: [categoriaGastoId], references: [id])
+  listaTarea     ListaTarea?    @relation(fields: [listaTareaId], references: [id], onDelete: Restrict)
+  evento         Evento?        @relation(fields: [eventoId], references: [id], onDelete: Restrict)
+  tarea          Tarea?         @relation(fields: [tareaId], references: [id], onDelete: Restrict)
+}
+
+// --- MÓDULO DE NOTIFICACIONES ---
+
+model Recordatorio {
+  id        String             @id @default(uuid())
+  usuarioId String
+  eventoId  String?
+  tareaId   String?
+  listaTareaId String?
+  activador DateTime @db.Timestamptz(3) // Fecha y hora de ejecución
+  estado    EstadoRecordatorio @default(PENDIENTE)
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+  evento  Evento? @relation(fields: [eventoId], references: [id])
+  tarea   Tarea?  @relation(fields: [tareaId], references: [id])
+  listaTarea ListaTarea? @relation(fields: [listaTareaId], references: [id])
+}
+
+model PushToken {
+  id              String          @id @default(uuid())
+  usuarioId       String
+  token           String          @unique
+  tipoDispositivo TipoDispositivo
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+}

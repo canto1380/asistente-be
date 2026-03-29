@@ -1,0 +1,534 @@
+{
+  "info": {
+    "name": "Asistente API - Gastos, Tareas, Eventos",
+    "description": "Colección para probar: Auth, CategoriaGasto (Supermercado, Medicos, Servicios, Deporte), Listas Tareas, Tareas (con/sin gasto, en lista/fuera), Eventos (con/sin gasto), Gastos.\n\n**Orden sugerido:**\n1. Auth Login → copiar `access_token` en variable `token`.\n2. Crear 4 categorías (Supermercado, Medicos, Servicios, Deporte).\n3. GET categorías y anotar los IDs en variables si quieres.\n4. Crear una Lista de tareas.\n5. Probar tareas (en lista con/sin gasto, fuera de lista con/sin gasto).\n6. Probar eventos (con/sin gasto).\n7. GET gastos para ver los registros generados.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:3000" },
+    { "key": "token", "value": "" },
+    { "key": "categoria_supermercado_id", "value": "" },
+    { "key": "categoria_medicos_id", "value": "" },
+    { "key": "categoria_servicios_id", "value": "" },
+    { "key": "categoria_deporte_id", "value": "" },
+    { "key": "lista_tarea_id", "value": "" },
+    { "key": "tarea_id", "value": "" },
+    { "key": "evento_id", "value": "" },
+    { "key": "gasto_id", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "0. Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.access_token) {",
+                  "        pm.collectionVariables.set('token', json.access_token);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"tu_email@ejemplo.com\",\n  \"password\": \"tu_password\"\n}"
+            },
+            "url": "{{base_url}}/auth/login",
+            "description": "Obtener access_token. Tras ejecutar, el token se guarda en la variable de colección 'token'."
+          }
+        },
+        {
+          "name": "Refresh token",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{token}}\"\n}"
+            },
+            "url": "{{base_url}}/auth/refresh",
+            "description": "Renovar access_token usando el refresh_token (en login recibes ambos)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "1. CategoriaGasto",
+      "item": [
+        {
+          "name": "Crear - Supermercado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.id) pm.collectionVariables.set('categoria_supermercado_id', json.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Supermercado\",\n  \"descripcion\": \"Compras de alimentos y productos del hogar\"\n}"
+            },
+            "url": "{{base_url}}/categoria-gasto/"
+          }
+        },
+        {
+          "name": "Crear - Medicos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.id) pm.collectionVariables.set('categoria_medicos_id', json.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Medicos\",\n  \"descripcion\": \"Consultas, medicamentos y estudios\"\n}"
+            },
+            "url": "{{base_url}}/categoria-gasto/"
+          }
+        },
+        {
+          "name": "Crear - Servicios",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.id) pm.collectionVariables.set('categoria_servicios_id', json.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Servicios\",\n  \"descripcion\": \"Luz, gas, internet, etc.\"\n}"
+            },
+            "url": "{{base_url}}/categoria-gasto/"
+          }
+        },
+        {
+          "name": "Crear - Deporte",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.id) pm.collectionVariables.set('categoria_deporte_id', json.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Deporte\",\n  \"descripcion\": \"Gimnasio, inscripciones, material deportivo\"\n}"
+            },
+            "url": "{{base_url}}/categoria-gasto/"
+          }
+        },
+        {
+          "name": "GET Todas las categorías",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/categoria-gasto/"
+          }
+        },
+        {
+          "name": "GET Una categoría por ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/categoria-gasto/{{categoria_supermercado_id}}"
+          }
+        },
+        {
+          "name": "PATCH Categoría",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Supermercado e hiper\",\n  \"descripcion\": \"Actualizado\"\n}"
+            },
+            "url": "{{base_url}}/categoria-gasto/{{categoria_supermercado_id}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Listas Tareas",
+      "item": [
+        {
+          "name": "Crear lista de tareas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.id) pm.collectionVariables.set('lista_tarea_id', json.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Compras marzo\",\n  \"descripcion\": \"Lista de compras del mes\",\n  \"tipoPeriodo\": \"MENSUAL\",\n  \"estado\": false\n}"
+            },
+            "url": "{{base_url}}/listas-tareas/"
+          }
+        },
+        {
+          "name": "GET Todas las listas",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/listas-tareas/"
+          }
+        },
+        {
+          "name": "GET Una lista por ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/listas-tareas/{{lista_tarea_id}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Tareas",
+      "item": [
+        {
+          "name": "Crear - Tarea EN LISTA CON gasto (genera Gasto agregado)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.id) pm.collectionVariables.set('tarea_id', json.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"listaTareaId\": \"{{lista_tarea_id}}\",\n  \"titulo\": \"Comprar leche y pan\",\n  \"gasto\": 25.50,\n  \"categoriaGastoId\": \"{{categoria_supermercado_id}}\",\n  \"prioridad\": \"MEDIA\"\n}"
+            },
+            "url": "{{base_url}}/tareas/",
+            "description": "Tarea dentro de una lista, con monto y categoría. El backend recalcula el Gasto total de la lista."
+          }
+        },
+        {
+          "name": "Crear - Tarea EN LISTA SIN gasto",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"listaTareaId\": \"{{lista_tarea_id}}\",\n  \"titulo\": \"Llamar al banco\",\n  \"prioridad\": \"BAJA\"\n}"
+            },
+            "url": "{{base_url}}/tareas/",
+            "description": "Tarea en lista sin campo gasto ni categoriaGastoId. No genera/actualiza Gasto."
+          }
+        },
+        {
+          "name": "Crear - Tarea FUERA de lista CON gasto",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Comprar material oficina\",\n  \"gasto\": 80,\n  \"categoriaGastoId\": \"{{categoria_servicios_id}}\"\n}"
+            },
+            "url": "{{base_url}}/tareas/",
+            "description": "Tarea suelta (sin listaTareaId). El campo gasto se guarda en Tarea pero NO se crea registro en Gasto (solo se agregan gastos por lista o por evento)."
+          }
+        },
+        {
+          "name": "Crear - Tarea FUERA de lista SIN gasto",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Revisar correos\",\n  \"prioridad\": \"ALTA\"\n}"
+            },
+            "url": "{{base_url}}/tareas/"
+          }
+        },
+        {
+          "name": "GET Todas las tareas",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/tareas/"
+          }
+        },
+        {
+          "name": "GET Una tarea por ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/tareas/{{tarea_id}}"
+          }
+        },
+        {
+          "name": "PATCH Tarea (ej. cambiar gasto, recalcula Gasto lista)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"gasto\": 30,\n  \"categoriaGastoId\": \"{{categoria_supermercado_id}}\"\n}"
+            },
+            "url": "{{base_url}}/tareas/{{tarea_id}}",
+            "description": "Si la tarea está en una lista y envías gasto + categoriaGastoId, se recalcula el Gasto de la lista."
+          }
+        },
+        {
+          "name": "PATCH Toggle estado tarea",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"COMPLETADA\"\n}"
+            },
+            "url": "{{base_url}}/tareas/toggle/{{tarea_id}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Eventos",
+      "item": [
+        {
+          "name": "Crear - Evento CON gasto (genera Gasto)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.id) pm.collectionVariables.set('evento_id', json.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Cena de trabajo\",\n  \"descripcion\": \"Cena con clientes\",\n  \"activo\": true,\n  \"estado\": \"PENDIENTE\",\n  \"prioridad\": \"ALTA\",\n  \"inicio\": \"2025-03-15T20:00:00.000Z\",\n  \"todoElDia\": false,\n  \"gastoTotal\": 350,\n  \"categoriaGastoId\": \"{{categoria_servicios_id}}\"\n}"
+            },
+            "url": "{{base_url}}/eventos/",
+            "description": "Al enviar gastoTotal y categoriaGastoId se crea automáticamente un Gasto asociado al evento."
+          }
+        },
+        {
+          "name": "Crear - Evento SIN gasto",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Reunión interna\",\n  \"descripcion\": \"Sin costo\",\n  \"activo\": true,\n  \"estado\": \"PENDIENTE\",\n  \"prioridad\": \"MEDIA\",\n  \"inicio\": \"2025-03-10T09:00:00.000Z\",\n  \"todoElDia\": false\n}"
+            },
+            "url": "{{base_url}}/eventos/",
+            "description": "Evento sin gastoTotal ni categoriaGastoId. No se crea registro en Gasto."
+          }
+        },
+        {
+          "name": "Crear - Evento con gasto (categoría Deporte)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Inscripción maratón\",\n  \"activo\": true,\n  \"estado\": \"PENDIENTE\",\n  \"prioridad\": \"MEDIA\",\n  \"inicio\": \"2025-04-01T08:00:00.000Z\",\n  \"todoElDia\": false,\n  \"gastoTotal\": 120,\n  \"categoriaGastoId\": \"{{categoria_deporte_id}}\"\n}"
+            },
+            "url": "{{base_url}}/eventos/"
+          }
+        },
+        {
+          "name": "GET Todos los eventos",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/eventos/"
+          }
+        },
+        {
+          "name": "GET Un evento por ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/eventos/{{evento_id}}"
+          }
+        },
+        {
+          "name": "PATCH Evento",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Cena de trabajo (actualizado)\",\n  \"prioridad\": \"BAJA\"\n}"
+            },
+            "url": "{{base_url}}/eventos/{{evento_id}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Gastos",
+      "item": [
+        {
+          "name": "GET Todos los gastos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    if (Array.isArray(json) && json[0] && json[0].id) {",
+                  "        pm.collectionVariables.set('gasto_id', json[0].id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/gastos/",
+            "description": "Lista gastos generados por eventos y por listas de tareas. No hay POST en este módulo."
+          }
+        },
+        {
+          "name": "GET Un gasto por ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/gastos/{{gasto_id}}"
+          }
+        }
+      ]
+    }
+  ]
+}
