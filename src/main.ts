@@ -20,7 +20,8 @@ async function bootstrap() {
             'http://localhost:5173',
             'http://localhost:3001',
             'http://localhost:4173',
-            'http://192.168.100.23:3000'
+            'http://192.168.100.23:3000',
+            'https://asistente-personal.netlify.app'
           ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
