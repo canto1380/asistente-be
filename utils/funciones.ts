@@ -19,7 +19,7 @@ export const switchEstadoRecordatorio = (estado: any): EstadoRecordatorio => {
 }
 
 
-export const switchParaDeterminarTipo = (type: any, usuarioId: string, id: string): string => {
+export const switchParaDeterminarTipo = (type: any, usuarioId: string, id: string): any => {
     const whereClause: any = {usuarioId}
     switch(type) {
         case 'tarea':

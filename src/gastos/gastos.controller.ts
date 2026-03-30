@@ -33,8 +33,8 @@ export class GastosController {
   @Get('/mensual')
   async obtenerReporteMensual(
     @GetUser() user: { userId: string },
-    @Query('mes', ParseIntPipe) mes: string,
-    @Query('anio', ParseIntPipe) anio: string,
+    @Query('mes', ParseIntPipe) mes: number,
+    @Query('anio', ParseIntPipe) anio: number,
     @Query('categoriaGasto', new ParseUUIDPipe({ optional: true })) categoriaGasto?: string,
   ) {
     return this.gastosService.obtenerReporteMensual(user.userId, mes, anio, categoriaGasto);
