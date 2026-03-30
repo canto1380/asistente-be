@@ -14,14 +14,13 @@ async function bootstrap() {
   app.enableCors({
     origin:
       process.env.NODE_ENV === 'production'
-        ? ['https://laboratorio-ipaat.netlify.app']
+        ? ['https://asistente-personal.netlify.app']
         : [
             'http://localhost:3000',
             'http://localhost:5173',
             'http://localhost:3001',
             'http://localhost:4173',
             'http://192.168.100.23:3000',
-            'https://asistente-personal.netlify.app'
           ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
