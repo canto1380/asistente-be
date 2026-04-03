@@ -43,4 +43,9 @@ export class CategoriaGastoController {
     return this.categoriaGastoService.update(id, categoriaGasto, user.userId, user.role);
   }
 
+  @Delete(':id')
+  @HttpCode(200)
+  delete(@Param('id', ParseUUIDPipe) id: string, @GetUser() user: { userId: string, role: string }) {
+    return this.categoriaGastoService.deleteCategoriaGasto(id, user.userId, user.role);
+  }
 }

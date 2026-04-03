@@ -71,4 +71,11 @@ export class CategoriaGastoService {
     return { message: `Estado del evento actualizado correctamente` };
   }
 
+  async deleteCategoriaGasto(id: string, usuarioId: string, role: string) {
+    await this.findOne(id, usuarioId, role);
+    await this.prisma.categoriaGasto.delete({
+      where: { id }
+    })
+    return { message: `Categoría de gasto eliminada correctamente` };
+  }
 }

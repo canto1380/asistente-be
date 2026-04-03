@@ -7,8 +7,8 @@ import { RolesGuard } from 'src/auth/roles.guard';
 import { Roles } from 'src/auth/roles.decorator';
 
 @Controller('roles')
-// @UseGuards(AuthGuard('jwt'), RolesGuard) // 1. Valida Token, 2. Valida Rol
-// @Roles('ADMIN') // Aplica a TODOS los endpoints de este controlador
+@UseGuards(AuthGuard('jwt'), RolesGuard) // 1. Valida Token, 2. Valida Rol
+@Roles('ADMIN') // Aplica a TODOS los endpoints de este controlador
 export class RolesController {
   constructor(private readonly rolesService: RolesService) {}
 
