@@ -44,7 +44,24 @@ export class RolesService {
   }
 
   async removeRol(id: string) {
-    await this.findOneRol(id); // Validamos existencia reutilizando el método anterior
+    await this.findOneRol(id);
+
+    // 1. Validar que no existan usuarios asignados a este rol
+    const usuariosConRol = await this.prisma.usuario.count({
+      where: { rolId: id },
+    });
+
+    if (usuariosConRol > 0) {
+      throw new BadRequestException('No se puede eliminar el rol porque está asignado a uno o más usuarios.');
+    }
+
+    // 2. Limpiar manualmente las relaciones en RolPermiso
+    // Esto asegura que el rol se pueda borrar independientemente de si la migración de DB se aplicó
+    await this.prisma.rolPermiso.deleteMany({
+      where: { rolId: id },
+    });
+
+    // 3. Ahora sí, eliminar el rol
     return await this.prisma.rol.delete({
       where: { id },
     });

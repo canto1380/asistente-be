@@ -6,14 +6,14 @@ import { PrismaService } from 'src/prisma/prisma.service';
 @Injectable()
 export class PermisosService {
 
-  constructor(private prisma: PrismaService){}
+  constructor(private prisma: PrismaService) { }
 
   async createPermiso(permiso: CreatePermisoDto) {
     const permisoExiste = await this.prisma.permiso.findUnique({
       where: { codigo: permiso.codigo },
     });
 
-    if(permisoExiste) {
+    if (permisoExiste) {
       throw new BadRequestException('Ya existe un permiso con ese codigo')
     }
     return await this.prisma.permiso.create({ data: permiso });
@@ -27,10 +27,20 @@ export class PermisosService {
     const permiso = await this.prisma.permiso.findUnique({
       where: { id },
     });
-    if(!permiso) {
+    if (!permiso) {
       throw new NotFoundException(`No existe un permiso con el id ${id}`)
     }
     return permiso
+  }
+
+  async findPermisosPorRol(id: string) {
+    const permisos = await this.prisma.rolPermiso.findMany({
+      where: { rolId: id },
+      include: {
+        permiso: true,
+      },
+    });
+    return permisos
   }
 
   async updatePermiso(id: string, permiso: UpdatePermisoDto) {
@@ -43,6 +53,15 @@ export class PermisosService {
 
   async removePermiso(id: string) {
     await this.findOnePermiso(id)
+
+    // 1. Validar que no existan roles asignados a este permiso
+    const rolesConPermiso = await this.prisma.rolPermiso.count({
+      where: { permisoId: id },
+    });
+    if (rolesConPermiso > 0) {
+      throw new BadRequestException('No se puede eliminar el permiso porque está asignado a uno o más roles.');
+    }
+
     return await this.prisma.permiso.delete({
       where: { id },
     });

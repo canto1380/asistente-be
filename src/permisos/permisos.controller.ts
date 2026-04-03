@@ -26,6 +26,12 @@ export class PermisosController {
     return this.permisosService.findOnePermiso(id);
   }
 
+  @Get('/permisosPorRol/:id')
+  @HttpCode(200)
+  findPermisosPorRol(@Param('id', ParseUUIDPipe) id: string) {
+    return this.permisosService.findPermisosPorRol(id);
+  }
+
   @Patch('/:id')
   @HttpCode(200)
   updatePermiso(@Param('id', ParseUUIDPipe) id: string, @Body() permiso: UpdatePermisoDto) {

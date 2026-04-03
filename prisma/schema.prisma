@@ -20,7 +20,7 @@ model Usuario {
   apellido  String
   activo    Boolean  @default(true)
   rolId    String
-  role      Rol      @relation(fields: [rolId], references: [id])
+  role      Rol      @relation(fields: [rolId], references: [id], onDelete: Restrict)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -54,8 +54,8 @@ model RolPermiso {
   rolId    String
   permisoId String
 
-  rol       Rol     @relation(fields: [rolId], references: [id])
-  permiso   Permiso @relation(fields: [permisoId], references: [id])
+  rol       Rol     @relation(fields: [rolId], references: [id], onDelete: Cascade)
+  permiso   Permiso @relation(fields: [permisoId], references: [id], onDelete: Restrict)
 
   @@unique([rolId, permisoId]) 
 }
