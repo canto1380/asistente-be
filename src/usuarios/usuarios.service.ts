@@ -26,7 +26,9 @@ export class UsuariosService {
   }
 
   async findAllUsuario() {
-    return await this.prisma.usuario.findMany()
+    return await this.prisma.usuario.findMany({
+      include: { role: true },
+    })
   }
 
   async findOneUsuario(id: string) {
