@@ -16,26 +16,41 @@ export class NotificacionesService {
   }
 
   private initializeFirebase() {
-    // Evita la reinicialización en entornos de hot-reloading
-    if (admin.apps.length === 0) {
+    if (admin.apps.length > 0) {
+      return;
+    }
+
+    try {
+      const jsonFromEnv = process.env.FIREBASE_SERVICE_ACCOUNT_JSON?.trim();
+      if (jsonFromEnv) {
+        const serviceAccount = JSON.parse(jsonFromEnv) as admin.ServiceAccount;
+        admin.initializeApp({
+          credential: admin.credential.cert(serviceAccount),
+        });
+        this.logger.log(
+          'Firebase Admin SDK inicializado correctamente (credenciales desde FIREBASE_SERVICE_ACCOUNT_JSON).',
+        );
+        return;
+      }
+
       const serviceAccountPath = path.join(
         process.cwd(),
         'config',
         'firebase-service-account.json',
       );
-
-      try {
-        const serviceAccount = require(serviceAccountPath);
-        admin.initializeApp({
-          credential: admin.credential.cert(serviceAccount),
-        });
-        this.logger.log('Firebase Admin SDK inicializado correctamente.');
-      } catch (error) {
-        this.logger.error(
-          'Error al inicializar Firebase Admin SDK. Asegúrate de que el archivo "firebase-service-account.json" existe en la carpeta "config".',
-          error.stack,
-        );
-      }
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const serviceAccount = require(serviceAccountPath) as admin.ServiceAccount;
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+      });
+      this.logger.log(
+        'Firebase Admin SDK inicializado correctamente (archivo config/firebase-service-account.json).',
+      );
+    } catch (error) {
+      this.logger.error(
+        'Error al inicializar Firebase Admin SDK. En producción define FIREBASE_SERVICE_ACCOUNT_JSON en el host; en local usa config/firebase-service-account.json.',
+        error instanceof Error ? error.stack : error,
+      );
     }
   }
 
@@ -45,6 +60,13 @@ export class NotificacionesService {
     cuerpo: string,
     data?: { [key: string]: string },
   ): Promise<void> {
+    if (admin.apps.length === 0) {
+      this.logger.warn(
+        'Firebase Admin no está inicializado; no se envía la notificación push.',
+      );
+      return;
+    }
+
     const message: admin.messaging.Message = {
       token: token,
       // Se elimina el campo 'notification' para enviar una notificación de solo datos (Data-only).
