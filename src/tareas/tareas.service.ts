@@ -97,6 +97,13 @@ export class TareasService {
       }
     }
 
+    /*
+    * Si la tarea pertenece a una lista, verificamos el estado de la lista tarea, y lo actualizamos segun el estado de la nueva tarea
+    */
+    if(tarea.listaTareaId) {
+      await this.listasTareasService.updateEstadoListaTarea(tarea.listaTareaId, usuarioId, role)
+    }
+
     // Si la tarea pertenece a una lista, se actualiza el gasto total de la lista y se actualiza/crea el registro de Gasto para la lista.
     if (nuevaTarea.listaTareaId) {
       // Actualiza el Gasto de la lista

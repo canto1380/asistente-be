@@ -225,7 +225,6 @@ export class ListasTareasService {
     const lista = await this.findOneListaTarea(id, usuarioId, role);
 
     const tareasVinculadas =  await this.tareasService.findTareasByListaTarea(id, usuarioId)
-    console.log('tareas asociadas: ', tareasVinculadas)
     let estado = true
     for (const tarea of tareasVinculadas) {
       if (tarea.estado === 'PENDIENTE') {
