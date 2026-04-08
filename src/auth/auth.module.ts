@@ -14,7 +14,7 @@ import { jwtSecret } from 'config/constants';
     // Generacion del TOKEN
     JwtModule.register({
       secret: jwtSecret,
-      signOptions: { expiresIn: '2h' },
+      signOptions: { expiresIn: '5h' },
     }),
   ],
   controllers: [AuthController],

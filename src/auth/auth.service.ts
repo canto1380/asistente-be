@@ -35,7 +35,7 @@ export class AuthService {
     const accessToken = this.jwtService.sign(payload, { expiresIn: '5h' });
     
     // Generamos Refresh Token (vida larga, ej: 7 días)
-    const refreshToken = this.jwtService.sign(payload, { expiresIn: '1d' });
+    const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
 
     return {
       access_token: accessToken,
@@ -61,7 +61,7 @@ export class AuthService {
       };
 
       return {
-        access_token: this.jwtService.sign(newPayload, { expiresIn: '1h' }),
+        access_token: this.jwtService.sign(newPayload, { expiresIn: '7d' }),
         // Opcional: Podrías rotar el refresh token aquí también si quisieras máxima seguridad
         refresh_token: refreshToken 
       };
