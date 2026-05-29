@@ -4,9 +4,10 @@ import { GastosModule } from 'src/gastos/gastos.module';
 import { EventosService } from './eventos.service';
 import { EventosController } from './eventos.controller';
 import { RecordatoriosModule } from 'src/recordatorios/recordatorios.module';
+import { OpenaiModule } from 'config/openai/openai.module';
 
 @Module({
-  imports: [GastosModule, RecordatoriosModule],
+  imports: [GastosModule, RecordatoriosModule, OpenaiModule],
   controllers: [EventosController],
   providers: [EventosService, PrismaService],
 })

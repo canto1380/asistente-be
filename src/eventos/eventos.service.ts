@@ -7,6 +7,7 @@ import { UpdateEventoDto } from './dto/update-evento.dto';
 import { UpdateEventoStatusDto } from './dto/update-evento-status.dto';
 import { switchEstadoRecordatorio } from 'utils/funciones';
 import { RecordatoriosService } from 'src/recordatorios/recordatorios.service';
+import { OpenaiService } from 'config/openai/openai.service';
 
 @Injectable()
 export class EventosService {
@@ -18,7 +19,18 @@ export class EventosService {
     private prisma: PrismaService,
     private gastosService: GastosService,
     private recordatoriosService: RecordatoriosService,
+    private openaiService: OpenaiService,
   ) { }
+
+  async chat(evento: any, usuarioId: string) {
+    console.log('evento: ', evento)
+    const response = await this.openaiService.getClient().responses.create({
+    model: "gpt-5.4",
+    input: evento.message
+  });
+
+    console.log(response.output_text);
+  }
 
   async createEvento(evento: CreateEventoDto, usuarioId: string) {
     const eventoExiste = await this.prisma.evento.findFirst({

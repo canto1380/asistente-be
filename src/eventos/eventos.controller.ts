@@ -21,6 +21,14 @@ export class EventosController {
     return this.eventosService.createEvento(evento, user.userId);
   }
 
+  @Post('/chat')
+  @UsePipes(new ValidationPipe({ whitelist: true }))
+  @HttpCode(201)
+  chat(@Body() evento: any, @GetUser() user: { userId: string }) {
+    return this.eventosService.chat(evento, user.userId);
+  }
+
+
   @Get('/')
   @HttpCode(200)
   findAll(@GetUser() user: { userId: string, role: string }) {
@@ -56,4 +64,6 @@ export class EventosController {
   remove(@Param('id', ParseUUIDPipe) id: string, @GetUser() user: { userId: string, role: string }){
     return this.eventosService.removeEvento(id, user.userId, user.role);
   }
+
+
 }

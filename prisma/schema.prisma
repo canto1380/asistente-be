@@ -32,6 +32,7 @@ model Usuario {
   gastos          Gasto[]
   recordatorios   Recordatorio[]
   pushTokens      PushToken[]
+  ingresos        Ingreso[]
 }
 
 model Rol {
@@ -203,6 +204,24 @@ model Gasto {
   listaTarea     ListaTarea?    @relation(fields: [listaTareaId], references: [id], onDelete: Restrict)
   evento         Evento?        @relation(fields: [eventoId], references: [id], onDelete: Restrict)
   tarea          Tarea?         @relation(fields: [tareaId], references: [id], onDelete: Restrict)
+}
+
+// --- MÓDULO DE INGRESOS ---
+
+model Ingreso {
+  id          String   @id @default(uuid())
+  usuarioId   String
+  total       Decimal  @db.Decimal(10, 2)
+  concepto    String
+  mes         Int
+  anio        Int
+  fecha       DateTime @default(now())
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime? // Soft Delete
+
+  usuario     Usuario  @relation(fields: [usuarioId], references: [id])
 }
 
 // --- MÓDULO DE NOTIFICACIONES ---
