@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,55 +7,204 @@ datasource db {
 }
 
 model Usuario {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  nombre    String
-  apellido  String
-  activo    Boolean  @default(true)
-  rolId    String
-  role      Rol      @relation(fields: [rolId], references: [id], onDelete: Restrict)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relaciones del sistema
-  eventos         Evento[]
-  listasTareas    ListaTarea[]
-  tareas          Tarea[]
+  id              String           @id @default(uuid())
+  email           String           @unique
+  password        String
+  nombre          String
+  apellido        String
+  activo          Boolean          @default(true)
+  rolId           String
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
   categoriasGasto CategoriaGasto[]
+  eventos         Evento[]
   gastos          Gasto[]
-  recordatorios   Recordatorio[]
-  pushTokens      PushToken[]
   ingresos        Ingreso[]
+  listasTareas    ListaTarea[]
+  pushTokens      PushToken[]
+  recordatorios   Recordatorio[]
+  tareas          Tarea[]
+  role            Rol              @relation(fields: [rolId], references: [id])
 }
 
 model Rol {
-  id          String          @id @default(uuid())
-  nombre      String          @unique
+  id          String       @id @default(uuid())
+  nombre      String       @unique
   descripcion String?
-  usuarios    Usuario[]
   permisos    RolPermiso[]
+  usuarios    Usuario[]
 }
 
 model Permiso {
-  id          String        @id @default(uuid())
-  codigo      String        @unique
+  id          String       @id @default(uuid())
+  codigo      String       @unique
   descripcion String?
   roles       RolPermiso[]
 }
 
 model RolPermiso {
   id        String  @id @default(uuid())
-  rolId    String
+  rolId     String
   permisoId String
-
+  permiso   Permiso @relation(fields: [permisoId], references: [id])
   rol       Rol     @relation(fields: [rolId], references: [id], onDelete: Cascade)
-  permiso   Permiso @relation(fields: [permisoId], references: [id], onDelete: Restrict)
 
-  @@unique([rolId, permisoId]) 
+  @@unique([rolId, permisoId])
 }
 
-// --- ENUM ---
+model Evento {
+  id            String         @id @default(uuid())
+  usuarioId     String
+  titulo        String
+  descripcion   String?
+  ubicacion     String?
+  direccion     String?
+  inicio        DateTime
+  todoElDia     Boolean        @default(false)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  deletedAt     DateTime?
+  activo        Boolean        @default(true)
+  estado        EstadoTarea    @default(PENDIENTE)
+  prioridad     Prioridad      @default(MEDIA)
+  hora          String?
+  link          String?
+  gastoTotal    Decimal?       @db.Decimal(10, 2)
+  usuario       Usuario        @relation(fields: [usuarioId], references: [id])
+  gastos        Gasto[]
+  recordatorios Recordatorio[]
+}
+
+model ListaTarea {
+  id               String         @id @default(uuid())
+  usuarioId        String
+  titulo           String
+  descripcion      String?
+  tipoPeriodo      TipoPeriodo    @default(CUSTOM)
+  gastoTotal       Decimal?       @db.Decimal(10, 2)
+  estado           Boolean        @default(false)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  deletedAt        DateTime?
+  categoriaGastoId String
+  mes              Int
+  anio             Int
+  fin              DateTime?
+  inicio           DateTime?
+  gastos           Gasto[]
+  categoriaGasto   CategoriaGasto @relation(fields: [categoriaGastoId], references: [id])
+  usuario          Usuario        @relation(fields: [usuarioId], references: [id])
+  recordatorios    Recordatorio[]
+  tareas           Tarea[]
+}
+
+model Tarea {
+  id               String         @id @default(uuid())
+  listaTareaId     String?
+  titulo           String
+  descripcion      String?
+  fechaVencimiento DateTime?
+  estado           EstadoTarea    @default(PENDIENTE)
+  prioridad        Prioridad      @default(MEDIA)
+  gasto            Decimal?       @db.Decimal(10, 2)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  deletedAt        DateTime?
+  usuarioId        String
+  gastos           Gasto[]
+  items            ItemTarea[]
+  recordatorios    Recordatorio[]
+  listaTarea       ListaTarea?    @relation(fields: [listaTareaId], references: [id], onDelete: Restrict)
+  usuario          Usuario        @relation(fields: [usuarioId], references: [id])
+}
+
+model ItemTarea {
+  id         String   @id @default(uuid())
+  tareaId    String
+  texto      String
+  completado Boolean  @default(false)
+  orden      Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  tarea      Tarea    @relation(fields: [tareaId], references: [id], onDelete: Cascade)
+
+  @@index([tareaId])
+}
+
+model CategoriaGasto {
+  id           String       @id @default(uuid())
+  usuarioId    String
+  nombre       String
+  descripcion  String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  deletedAt    DateTime?
+  usuario      Usuario      @relation(fields: [usuarioId], references: [id])
+  gastos       Gasto[]
+  listasTareas ListaTarea[]
+}
+
+model Gasto {
+  id               String         @id @default(uuid())
+  usuarioId        String
+  categoriaGastoId String
+  listaTareaId     String?
+  eventoId         String?
+  total            Decimal        @db.Decimal(10, 2)
+  descripcion      String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  deletedAt        DateTime?
+  tareaId          String?
+  anio             Int
+  mes              Int
+  categoriaGasto   CategoriaGasto @relation(fields: [categoriaGastoId], references: [id])
+  evento           Evento?        @relation(fields: [eventoId], references: [id], onDelete: Restrict)
+  listaTarea       ListaTarea?    @relation(fields: [listaTareaId], references: [id], onDelete: Restrict)
+  tarea            Tarea?         @relation(fields: [tareaId], references: [id], onDelete: Restrict)
+  usuario          Usuario        @relation(fields: [usuarioId], references: [id])
+}
+
+model Ingreso {
+  id        String    @id @default(uuid())
+  usuarioId String
+  total     Decimal   @db.Decimal(10, 2)
+  concepto  String
+  mes       Int
+  anio      Int
+  fecha     DateTime  @default(now())
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  usuario   Usuario   @relation(fields: [usuarioId], references: [id])
+}
+
+model Recordatorio {
+  id           String             @id @default(uuid())
+  usuarioId    String
+  eventoId     String?
+  tareaId      String?
+  activador    DateTime           @db.Timestamptz(3)
+  estado       EstadoRecordatorio @default(PENDIENTE)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  listaTareaId String?
+  evento       Evento?            @relation(fields: [eventoId], references: [id])
+  listaTarea   ListaTarea?        @relation(fields: [listaTareaId], references: [id])
+  tarea        Tarea?             @relation(fields: [tareaId], references: [id])
+  usuario      Usuario            @relation(fields: [usuarioId], references: [id])
+}
+
+model PushToken {
+  id              String          @id @default(uuid())
+  usuarioId       String
+  token           String          @unique
+  tipoDispositivo TipoDispositivo
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  usuario         Usuario         @relation(fields: [usuarioId], references: [id])
+}
+
 enum EstadoTarea {
   PENDIENTE
   COMPLETADA
@@ -91,165 +234,4 @@ enum TipoDispositivo {
   ANDROID
   IOS
   WEB
-}
-
-// --- MÓDULO DE AGENDA (EVENTOS) ---
-
-model Evento {
-  id          String    @id @default(uuid())
-  usuarioId   String
-  titulo      String
-  descripcion String?
-  ubicacion   String?
-  direccion   String?
-  link        String?
-  hora        String?
-  activo      Boolean   @default(true)
-  estado      EstadoTarea @default(PENDIENTE)
-  prioridad   Prioridad   @default(MEDIA)
-  inicio      DateTime
-  todoElDia   Boolean   @default(false)
-  gastoTotal  Decimal?  @db.Decimal(10, 2)
-  
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime? // Soft Delete
-
-  usuario       Usuario        @relation(fields: [usuarioId], references: [id])
-  recordatorios Recordatorio[]
-  gastos        Gasto[]
-}
-
-// --- MÓDULO DE TAREAS ---
-
-model ListaTarea {
-  id          String      @id @default(uuid())
-  usuarioId   String
-  titulo      String
-  descripcion String?
-  tipoPeriodo TipoPeriodo @default(CUSTOM)
-  mes         Int
-  anio        Int
-  inicio      DateTime?
-  fin         DateTime?
-  categoriaGastoId String
-  gastoTotal  Decimal?    @db.Decimal(10, 2)
-  estado      Boolean     @default(false) // Activa / Inactiva (o completada)
-
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  deletedAt   DateTime?
-
-  usuario Usuario @relation(fields: [usuarioId], references: [id])
-  categoriaGasto CategoriaGasto @relation(fields: [categoriaGastoId], references: [id])
-  tareas  Tarea[]
-  gastos  Gasto[]
-  recordatorios Recordatorio[]
-}
-
-model Tarea {
-  id               String      @id @default(uuid())
-  usuarioId        String
-  listaTareaId     String?
-  titulo           String
-  descripcion      String?
-  fechaVencimiento DateTime?
-  estado           EstadoTarea @default(PENDIENTE)
-  prioridad        Prioridad   @default(MEDIA)
-  gasto            Decimal?    @db.Decimal(10, 2) // Costo estimado o individual
-
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  deletedAt       DateTime? // Soft Delete
-
-  usuario        Usuario        @relation(fields: [usuarioId], references: [id])
-  listaTarea    ListaTarea?    @relation(fields: [listaTareaId], references: [id], onDelete: Restrict)
-  recordatorios Recordatorio[]
-  gastos         Gasto[]
-}
-
-// --- MÓDULO DE FINANZAS ---
-
-model CategoriaGasto {
-  id          String   @id @default(uuid())
-  usuarioId   String
-  nombre      String
-  descripcion String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  deletedAt   DateTime?
-
-  usuario Usuario @relation(fields: [usuarioId], references: [id])
-  listasTareas ListaTarea[]
-  gastos  Gasto[]
-}
-
-model Gasto {
-  id               String   @id @default(uuid())
-  usuarioId        String
-  categoriaGastoId String
-  listaTareaId     String? // Opcional
-  eventoId         String? // Opcional
-  tareaId          String? // Opcional - tarea independiente (sin lista)
-  total            Decimal  @db.Decimal(10, 2)
-  descripcion      String?
-  mes              Int
-  anio             Int
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  deletedAt        DateTime? // Soft Delete
-
-  usuario        Usuario        @relation(fields: [usuarioId], references: [id])
-  categoriaGasto CategoriaGasto @relation(fields: [categoriaGastoId], references: [id])
-  listaTarea     ListaTarea?    @relation(fields: [listaTareaId], references: [id], onDelete: Restrict)
-  evento         Evento?        @relation(fields: [eventoId], references: [id], onDelete: Restrict)
-  tarea          Tarea?         @relation(fields: [tareaId], references: [id], onDelete: Restrict)
-}
-
-// --- MÓDULO DE INGRESOS ---
-
-model Ingreso {
-  id          String   @id @default(uuid())
-  usuarioId   String
-  total       Decimal  @db.Decimal(10, 2)
-  concepto    String
-  mes         Int
-  anio        Int
-  fecha       DateTime @default(now())
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  deletedAt   DateTime? // Soft Delete
-
-  usuario     Usuario  @relation(fields: [usuarioId], references: [id])
-}
-
-// --- MÓDULO DE NOTIFICACIONES ---
-
-model Recordatorio {
-  id        String             @id @default(uuid())
-  usuarioId String
-  eventoId  String?
-  tareaId   String?
-  listaTareaId String?
-  activador DateTime @db.Timestamptz(3) // Fecha y hora de ejecución
-  estado    EstadoRecordatorio @default(PENDIENTE)
-  createdAt DateTime           @default(now())
-  updatedAt DateTime           @updatedAt
-
-  usuario Usuario @relation(fields: [usuarioId], references: [id])
-  evento  Evento? @relation(fields: [eventoId], references: [id])
-  tarea   Tarea?  @relation(fields: [tareaId], references: [id])
-  listaTarea ListaTarea? @relation(fields: [listaTareaId], references: [id])
-}
-
-model PushToken {
-  id              String          @id @default(uuid())
-  usuarioId       String
-  token           String          @unique
-  tipoDispositivo TipoDispositivo
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-
-  usuario Usuario @relation(fields: [usuarioId], references: [id])
 }

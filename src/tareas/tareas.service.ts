@@ -4,6 +4,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { GastosService } from 'src/gastos/gastos.service';
 import { ListasTareasService } from 'src/listas-tareas/listas-tareas.service'
 import { CreateTareaDto } from './dto/create-tarea.dto';
+import { ItemTareaDto } from './dto/item-tarea.dto';
 import { UpdateTareaDto } from './dto/update-tarea.dto';
 import { UpdateEstadoTareaDto } from './dto/update-estado-tarea.dto';
 import { UpdatePrioridadTareaDto } from './dto/update-prioridad-tare.dto';
@@ -19,6 +20,42 @@ export class TareasService {
     private listasTareasService: ListasTareasService,
     private recordatoriosService: RecordatoriosService,
   ) { }
+
+  private readonly itemsInclude = {
+    items: { orderBy: { orden: 'asc' as const } },
+  };
+
+  private buildItemsCreate(items?: ItemTareaDto[]) {
+    if (!items?.length) return undefined;
+    return {
+      create: items.map((item, index) => ({
+        texto: item.texto.trim(),
+        completado: item.completado ?? false,
+        orden: item.orden ?? index,
+      })),
+    };
+  }
+
+  private buildDescripcionFromItems(items?: ItemTareaDto[], descripcion?: string) {
+    const trimmed = descripcion?.trim();
+    if (trimmed) return trimmed;
+    if (!items?.length) return undefined;
+    return items.map((item) => item.texto.trim()).filter(Boolean).join('\n') || undefined;
+  }
+
+  private async syncItemsTarea(tareaId: string, items?: ItemTareaDto[]) {
+    if (items === undefined) return;
+    await this.prisma.itemTarea.deleteMany({ where: { tareaId } });
+    if (!items.length) return;
+    await this.prisma.itemTarea.createMany({
+      data: items.map((item, index) => ({
+        tareaId,
+        texto: item.texto.trim(),
+        completado: item.completado ?? false,
+        orden: item.orden ?? index,
+      })),
+    });
+  }
 
   private async assertListaTareaAccesible(listaTareaId: string, usuarioId: string, role: string) {
     if (role === 'ADMIN') {
@@ -56,15 +93,18 @@ export class TareasService {
     // }
 
     // categoriaGastoId no existe en el modelo Tarea; solo se usa para recalcular Gasto de la lista
-    const { categoriaGastoId, horaRecordatorio, ...tareaData } = tarea;
+    const { categoriaGastoId, horaRecordatorio, items, ...tareaData } = tarea;
     const nuevaTarea = await this.prisma.tarea.create({
       data: {
         ...tareaData,
+        descripcion: this.buildDescripcionFromItems(items, tareaData.descripcion),
         fechaVencimiento: tareaData.fechaVencimiento || undefined,
         estado: tareaData.estado ? (tareaData.estado as EstadoTarea) : undefined,
         prioridad: tareaData.prioridad ? (tareaData.prioridad as Prioridad) : undefined,
-        usuarioId
+        usuarioId,
+        items: this.buildItemsCreate(items),
       },
+      include: this.itemsInclude,
     });
 
     /** RECORDATORIO **/
@@ -143,7 +183,8 @@ export class TareasService {
           categoriaGasto: true
         }
       },
-      listaTarea: true
+      listaTarea: true,
+      ...this.itemsInclude,
     }
 
     if (role === 'ADMIN') {
@@ -163,7 +204,7 @@ export class TareasService {
   async findTareasByListaTarea(listaTareaId: string, usuarioId: string) {
     return await this.prisma.tarea.findMany({
       where: { listaTareaId, usuarioId },
-      include: { listaTarea: true },
+      include: { listaTarea: true, ...this.itemsInclude },
     });
   }
 
@@ -172,7 +213,7 @@ export class TareasService {
     if (role === 'ADMIN') {
       const tarea = await this.prisma.tarea.findUnique({
         where: { id },
-        include: { listaTarea: true },
+        include: { listaTarea: true, ...this.itemsInclude },
       });
       if (!tarea) {
         throw new NotFoundException(`No existe una tarea con el id: ${id}`)
@@ -182,7 +223,7 @@ export class TareasService {
     if (role === 'ADMINEMPRESA') {
       const tarea = await this.prisma.tarea.findFirst({
         where: { id, usuarioId },
-        include: { listaTarea: true },
+        include: { listaTarea: true, ...this.itemsInclude },
       });
       if (!tarea) {
         throw new NotFoundException(`No existe una tarea con el id: ${id}`)
@@ -200,17 +241,25 @@ export class TareasService {
     }
 
     // categoriaGastoId no existe en el modelo Tarea; solo se usa para recalcular Gasto de la lista
-    const { categoriaGastoId, horaRecordatorio, ...tareaData } = tarea;
+    const { categoriaGastoId, horaRecordatorio, items, ...tareaData } = tarea;
     const tareaActualizada = await this.prisma.tarea.update({
       where: { id },
       data: {
         ...tareaData,
+        descripcion: items !== undefined
+          ? this.buildDescripcionFromItems(items, tareaData.descripcion)
+          : tareaData.descripcion,
         fechaVencimiento: tareaData.fechaVencimiento ? new Date(tareaData.fechaVencimiento) : undefined,
         estado: tareaData.estado ? (tareaData.estado as EstadoTarea) : undefined,
         prioridad: tareaData.prioridad ? (tareaData.prioridad as Prioridad) : undefined,
         usuarioId
       },
+      include: this.itemsInclude,
     });
+
+    if (items !== undefined) {
+      await this.syncItemsTarea(id, items);
+    }
 
     const oldListaId = tareaExistente.listaTareaId;
     const newListaId = tareaActualizada.listaTareaId;
@@ -359,5 +408,28 @@ export class TareasService {
     }
 
     return { message: 'Tarea eliminada correctamente' };
+  }
+
+  async toggleItemTarea(itemId: string, usuarioId: string, role: string) {
+    const item = await this.prisma.itemTarea.findFirst({
+      where: {
+        id: itemId,
+        ...(role === 'ADMINEMPRESA' ? { tarea: { usuarioId } } : {}),
+      },
+      include: { tarea: true },
+    });
+
+    if (!item) {
+      throw new NotFoundException(`No existe un ítem con el id: ${itemId}`);
+    }
+
+    if (role === 'ADMINEMPRESA' && item.tarea.usuarioId !== usuarioId) {
+      throw new ForbiddenException('No tienes permisos para modificar este ítem');
+    }
+
+    return this.prisma.itemTarea.update({
+      where: { id: itemId },
+      data: { completado: !item.completado },
+    });
   }
 }

@@ -13,8 +13,8 @@ export class UsuariosController {
   @Post('/')
   @UsePipes(new ValidationPipe({whitelist: true}))
   @HttpCode(201)
-  // @UseGuards(AuthGuard('jwt'), RolesGuard)
-  // @Roles('ADMIN') // Solo ADMIN puede crear usuarios
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('ADMIN') // Solo ADMIN puede crear usuarios
   create(@Body() usuario: CreateUsuarioDto) {
     return this.usuariosService.createUsuario(usuario);
   }

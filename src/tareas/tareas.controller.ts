@@ -58,6 +58,15 @@ export class TareasController {
     return this.tareasService.updateTarea(id, tarea, user.userId, user.role);
   }
 
+  @Patch('/items/:itemId/toggle')
+  @HttpCode(200)
+  toggleItem(
+    @Param('itemId', ParseUUIDPipe) itemId: string,
+    @GetUser() user: { userId: string; role: string },
+  ) {
+    return this.tareasService.toggleItemTarea(itemId, user.userId, user.role);
+  }
+
   @Patch('/toggle/:id')
   @UsePipes(new ValidationPipe({ whitelist: true }))
   @HttpCode(200)

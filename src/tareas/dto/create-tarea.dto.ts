@@ -1,7 +1,9 @@
 // DTO de creación de tarea (definido por el asistente)
 
 // DTO de creación de tarea con soporte de gastos y categoría de gasto
-import { IsDateString, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsArray, IsDateString, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, ValidateNested } from 'class-validator';
+import { ItemTareaDto } from './item-tarea.dto';
 
 export class CreateTareaDto {
   @IsUUID()
@@ -15,6 +17,12 @@ export class CreateTareaDto {
   @IsString()
   @IsOptional()
   descripcion?: string;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ItemTareaDto)
+  @IsOptional()
+  items?: ItemTareaDto[];
 
   @IsDateString()
   @IsOptional()
