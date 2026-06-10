@@ -313,7 +313,6 @@ export class RecordatoriosService {
 
   async updateRecordatorio(id: string, recordatorio: any, usuarioId: string, role: string) {
     const aa = await this.findOneRecordatorio(id, usuarioId, role);
-    console.log('aaa: ', aa)
     await this.prisma.recordatorio.update({
       where: { id },
       data: {

@@ -17,8 +17,9 @@ export class GastosService {
     total: number;
     descripcion?: string;
     fecha?: Date;
+    completado?: boolean;
   }) {
-    const { usuarioId, eventoId, categoriaGastoId, total, descripcion, fecha } = params;
+    const { usuarioId, eventoId, categoriaGastoId, total, descripcion, fecha, completado } = params;
 
     const fechaRef = fecha ?? new Date();
     const mes = fechaRef.getMonth() + 1;
@@ -33,13 +34,47 @@ export class GastosService {
         descripcion,
         mes,
         anio,
+        completado
       },
     });
+  }
+  async actualizarEstadoGasto(params: { completado: boolean, usuarioId: string, eventoId: string}){
+    const { completado, usuarioId, eventoId } = params;
+
+    const gasto = await this.buscarGastoPorEvento(eventoId, usuarioId);
+    if(gasto && gasto.id) {
+      return this.prisma.gasto.update({
+        where: { id: gasto.id },
+        data: {
+          completado
+        },
+      });
+    }
   }
 
   async buscarGastoPorEvento(eventoId: string, usuarioId: string) {
     const gasto = await this.prisma.gasto.findFirst({
       where: { eventoId, usuarioId },
+    });
+    return gasto;
+  }
+
+  async actualizarEstadoGastoDeTareaIndependiente(params: { completado: boolean, usuarioId: string, tareaId: string}){
+    const { completado, usuarioId, tareaId } = params;
+
+    const gasto = await this.buscarGastoPorTareaIndependiente(tareaId, usuarioId);
+    if(gasto && gasto.id) {
+      return this.prisma.gasto.update({
+        where: { id: gasto.id },
+        data: {
+          completado
+        },
+      });
+    }
+  }
+  async buscarGastoPorTareaIndependiente(tareaId: string, usuarioId: string) {
+    const gasto = await this.prisma.gasto.findFirst({
+      where: { tareaId, usuarioId },
     });
     return gasto;
   }
@@ -56,8 +91,9 @@ export class GastosService {
     total: number;
     descripcion?: string;
     fecha?: Date;
+    completado?: boolean;
   }) {
-    const { tareaId, usuarioId, total, descripcion, fecha } = params;
+    const { tareaId, usuarioId, total, descripcion, fecha, completado } = params;
 
     const fechaRef = fecha || new Date();
     const mes = fechaRef.getMonth() + 1;
@@ -80,7 +116,8 @@ export class GastosService {
       total,
       descripcion,
       mes,
-      anio
+      anio,
+      completado
     };
 
     if (existente) {
@@ -275,6 +312,7 @@ export class GastosService {
       mes: Number(mes),
       anio: Number(anio),
       deletedAt: null,
+      completado: true,
     };
 
     // Solo filtramos por categoría si recibimos un ID que no sea vacío o "undefined"

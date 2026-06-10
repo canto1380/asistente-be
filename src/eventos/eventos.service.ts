@@ -23,13 +23,10 @@ export class EventosService {
   ) { }
 
   async chat(evento: any, usuarioId: string) {
-    console.log('evento: ', evento)
     const response = await this.openaiService.getClient().responses.create({
-    model: "gpt-5.4",
-    input: evento.message
-  });
-
-    console.log(response.output_text);
+      model: "gpt-5.4",
+      input: evento.message
+    });
   }
 
   async createEvento(evento: CreateEventoDto, usuarioId: string) {
@@ -94,7 +91,8 @@ export class EventosService {
         categoriaGastoId,
         descripcion: nuevoEvento.titulo,
         total: gastoTotal,
-        fecha: new Date(inicio)
+        fecha: new Date(inicio),
+        completado: evento.estado === 'COMPLETADA' ? true : false,
       });
     }
 
@@ -203,7 +201,14 @@ export class EventosService {
         });
       } else {
         // Crear un nuevo gasto si no existía
-        await this.gastosService.registrarGastoEvento({ usuarioId, eventoId: id, categoriaGastoId, total: gastoTotal, fecha: new Date(eventoActualizado.inicio) });
+        await this.gastosService.registrarGastoEvento({
+          usuarioId,
+          eventoId: id,
+          categoriaGastoId,
+          total: gastoTotal,
+          fecha: new Date(eventoActualizado.inicio),
+          completado: eventoActualizado.estado === 'COMPLETADA' ? true : false,
+        })
       }
     } else if (gastoExistente) { // Caso 2: Se está eliminando el gasto (gastoTotal es 0 o nulo)
       await this.prisma.gasto.delete({ where: { id: gastoExistente.id } });
@@ -243,8 +248,7 @@ export class EventosService {
   }
 
   async updateStatusEvento(id: string, updateStatusDto: UpdateEventoStatusDto, usuarioId: string, role: string) {
-    await this.findOneEvento(id, usuarioId, role)
-
+    const eventoParaActualizar = await this.findOneEvento(id, usuarioId, role)
     // Determinar el estado de 'activo' basado en el 'estado' de la tarea.
     // Un evento está 'inactivo' (cerrado) solo si está completado o cancelado.
     const newActivo = updateStatusDto.estado !== 'COMPLETADA' && updateStatusDto.estado !== 'CANCELADA';
@@ -269,9 +273,20 @@ export class EventosService {
         data: { estado: estadoParaRecordatorio }
       });
     }
-
-
-
+    /* Verificar si evento tenia gasto registrado
+    * si existe gasto >>  
+        SI. eventoParaActualizar.estado === 'COMPLETADO' && newActivo !== 'COMPLETADO' 
+            -->SI> update gasto a completado = false
+            -->NO>
+    */
+    if (eventoParaActualizar.gastoTotal) {
+      if (eventoParaActualizar.estado === 'COMPLETADA' && updateStatusDto.estado !== 'COMPLETADA') {
+        await this.gastosService.actualizarEstadoGasto({ completado: false, usuarioId, eventoId: id })
+      }
+      if (eventoParaActualizar.estado !== 'COMPLETADA' && updateStatusDto.estado === 'COMPLETADA') {
+        await this.gastosService.actualizarEstadoGasto({ completado: true, usuarioId, eventoId: id })
+      }
+    }
     return { message: `Estado del evento actualizado correctamente` };
   }
 

@@ -158,6 +158,7 @@ model Gasto {
   tareaId          String?
   anio             Int
   mes              Int
+  completado Boolean  @default(false)
   categoriaGasto   CategoriaGasto @relation(fields: [categoriaGastoId], references: [id])
   evento           Evento?        @relation(fields: [eventoId], references: [id], onDelete: Restrict)
   listaTarea       ListaTarea?    @relation(fields: [listaTareaId], references: [id], onDelete: Restrict)

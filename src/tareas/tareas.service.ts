@@ -140,7 +140,7 @@ export class TareasService {
     /*
     * Si la tarea pertenece a una lista, verificamos el estado de la lista tarea, y lo actualizamos segun el estado de la nueva tarea
     */
-    if(tarea.listaTareaId) {
+    if (tarea.listaTareaId) {
       await this.listasTareasService.updateEstadoListaTarea(tarea.listaTareaId, usuarioId, role)
     }
 
@@ -168,6 +168,7 @@ export class TareasService {
         total: Number(nuevaTarea.gasto),
         descripcion: nuevaTarea.descripcion ?? undefined,
         fecha: nuevaTarea.fechaVencimiento ?? undefined,
+        completado: nuevaTarea.estado === 'COMPLETADA' ? true : false,
       });
     }
 
@@ -275,6 +276,7 @@ export class TareasService {
           total: Number(tareaActualizada.gasto),
           descripcion: tareaActualizada.descripcion ?? undefined,
           fecha: tareaActualizada.fechaVencimiento ?? undefined,
+          completado: tareaExistente.estado === 'COMPLETADA' ? true : false,
         });
       } else {
         // Si no tiene gasto, se elimina cualquier Gasto individual que pudiera tener
@@ -364,8 +366,22 @@ export class TareasService {
         });
         await this.recordatoriosService.updateEstado(tarea.listaTareaId, 'listaTarea', usuarioId, 'PENDIENTE')
       }
+    } else {
+      /**
+       * Verificar si tarea independiente tiene gasto registrado
+       * si tiene gasto
+       * si tarea.estado === COMPLETADO && estado.estado !== COMPLETADO >> update gasto COMPLETADO = FALSE
+       * si tarea.estado !== COMPLETADO && estado.estado === COMPLETADO >> update gasto COMPLETADO = TRUE
+       */
+      if (tarea.gasto) {
+        if (tarea.estado === 'COMPLETADA' && estado.estado !== 'COMPLETADA') {
+          await this.gastosService.actualizarEstadoGastoDeTareaIndependiente({ completado: false, usuarioId, tareaId: id })
+        }
+        if (tarea.estado !== 'COMPLETADA' && estado.estado === 'COMPLETADA') {
+          await this.gastosService.actualizarEstadoGastoDeTareaIndependiente({ completado: true, usuarioId, tareaId: id })
+        }
+      }
     }
-
 
     return { message: `Tarea ${tarea.estado ? 'completada' : 'pendiente'}` };
   }

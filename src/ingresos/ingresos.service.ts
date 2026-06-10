@@ -8,17 +8,6 @@ export class IngresosService {
   constructor(private prisma: PrismaService) { }
 
   async create(nuevoIngreso: CreateIngresoDto, usuarioId: string) {
-    console.log('nuevo: ', nuevoIngreso)
-    // const ingresoExiste = await this.prisma.ingreso.findFirst({
-    //   where: {
-    //     mes: nuevoIngreso.mes,
-    //     anio: nuevoIngreso.anio
-    //   }
-    // })
-
-    // if (ingresoExiste) {
-    //   throw new BadRequestException('Ya existe un ingreso para el mes y año.')
-    // }
     return await this.prisma.ingreso.create({
       data: {
         ...nuevoIngreso,
@@ -29,7 +18,6 @@ export class IngresosService {
   }
 
   async findAll(usuarioId: string, role: string) {
-    console.log('asdasd')
     const where: any = { deletedAt: null };
 
     if (role === 'ADMINEMPRESA') {
@@ -118,6 +106,7 @@ export class IngresosService {
           usuarioId,
           mes: Number(mes),
           anio: Number(anio),
+          completado: true,
           deletedAt: null,
         },
         _sum: { total: true },
